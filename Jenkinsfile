@@ -37,6 +37,14 @@ pipeline {
                 }
             }
         }
-        // En dev no hacemos push a DockerHub, pero puedes si necesitas QA
+        stage('Push to DockerHub') {
+            when { branch 'dev' }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh "docker push ${DOCKER_IMAGE}:dev"
+                }
+            }
+        }
     }
 }
