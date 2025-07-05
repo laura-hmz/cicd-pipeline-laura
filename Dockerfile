@@ -1,18 +1,16 @@
-# Use a modern and stable version of Node.js
 FROM node:18
 
-# Set the working directory inside the container
 WORKDIR /app
 
-# Copy all project files into the container
 COPY . .
 
-# Install dependencies
 RUN npm install
+RUN npm run build
 
-# Expose default port (can be mapped to another one at runtime)
-EXPOSE 3001
+# Instala el servidor estático de manera correcta
+RUN npm install -g serve
 
-# Start the application
-CMD ["npm", "start"]
+EXPOSE 3000
 
+# Usamos el binario directamente desde npx (más seguro)
+CMD ["npx", "serve", "-s", "build", "-l", "3000"]
