@@ -1,5 +1,18 @@
-FROM node:7.8.0
-WORKDIR /opt
-ADD . /opt
+# Use a modern and stable version of Node.js
+FROM node:18
+
+# Set the working directory inside the container
+WORKDIR /app
+
+# Copy all project files into the container
+COPY . .
+
+# Install dependencies
 RUN npm install
-ENTRYPOINT npm run start
+
+# Expose default port (can be mapped to another one at runtime)
+EXPOSE 3000
+
+# Start the application
+CMD ["npm", "start"]
+
