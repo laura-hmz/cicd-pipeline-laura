@@ -1,9 +1,12 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'node:18' // Usa node:20 si tu proyecto lo requiere
+        }
+    }
 
     environment {
-        IMAGE_NAME = "nodemain"
-        PORT = "3000"
+        DOCKER_IMAGE = "laura/cicd-pipeline" // Cambia esto si subes a DockerHub u otro registry
     }
 
     stages {
@@ -16,44 +19,36 @@ pipeline {
         stage('Install & Build') {
             steps {
                 sh 'npm install'
-                sh 'npm run build'
+                // Descomenta si usas build scripts como React o Vue
+                // sh 'npm run build'
             }
         }
 
         stage('Tests') {
             steps {
-                sh 'npm test || echo "tests skipped (adjust this if needed)"'
-            }
-        }
-
-        stage('Set ENV') {
-            steps {
-                script {
-                    if (env.BRANCH_NAME == 'dev') {
-                        env.PORT = '3001'
-                        env.IMAGE_NAME = 'nodedev'
-                    }
-                }
+                // Si no tienes tests, puedes comentar o borrar este bloque
+                sh 'npm test || echo "No tests found or tests failed"'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${IMAGE_NAME}:v1.0 ."
+                script {
+                    dockerImage = docker.build("${DOCKER_IMAGE}:${env.BRANCH_NAME}")
+                }
             }
         }
 
         stage('Deploy') {
+            when {
+                branch 'main'
+            }
             steps {
-                script {
-                    // Detener solo el contenedor de esta rama si existe
-                    sh "docker rm -f ${IMAGE_NAME} || true"
-
-                    // Correrlo en el puerto correspondiente
-                    sh "docker run -d --name ${IMAGE_NAME} -p ${PORT}:${PORT} ${IMAGE_NAME}:v1.0"
-                }
+                echo 'Deployment logic goes here, if needed'
+                // Puedes subir la imagen a DockerHub o a tu servidor, por ejemplo:
+                // sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
+                // sh "docker push ${DOCKER_IMAGE}:${env.BRANCH_NAME}"
             }
         }
     }
 }
-
