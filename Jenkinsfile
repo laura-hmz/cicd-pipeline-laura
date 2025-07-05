@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        DOCKER_IMAGE = "laura/cicd-pipeline" // Cambia esto si subes a DockerHub u otro registry
+        DOCKER_IMAGE = "laurahmz/cicd-pipeline" // Cambia si usas otro nombre de repo en DockerHub
     }
 
     stages {
@@ -26,7 +26,6 @@ pipeline {
 
         stage('Tests') {
             steps {
-                // Si no tienes tests, puedes comentar o borrar este bloque
                 sh 'npm test || echo "No tests found or tests failed"'
             }
         }
@@ -44,10 +43,16 @@ pipeline {
                 branch 'main'
             }
             steps {
-                echo 'Deployment logic goes here, if needed'
-                // Puedes subir la imagen a DockerHub o a tu servidor, por ejemplo:
-                // sh 'docker login -u $DOCKER_USER -p $DOCKER_PASS'
-                // sh "docker push ${DOCKER_IMAGE}:${env.BRANCH_NAME}"
+                withCredentials([
+                    usernamePassword(
+                        credentialsId: 'dockerhub',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_PASS'
+                    )
+                ]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh "docker push ${DOCKER_IMAGE}:${env.BRANCH_NAME}"
+                }
             }
         }
     }
