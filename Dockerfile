@@ -11,7 +11,7 @@ COPY . .
 RUN npm install
 
 # Expose default port (can be mapped to another one at runtime)
-EXPOSE 3000
+EXPOSE 3001
 
 # Start the application
 CMD ["npm", "start"]
