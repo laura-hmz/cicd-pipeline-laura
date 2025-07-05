@@ -1,12 +1,9 @@
 pipeline {
-    agent {
-        docker {
-            image 'node:18' // Usa node:20 si tu proyecto lo requiere
-        }
-    }
+    agent any
 
     environment {
-        DOCKER_IMAGE = "laurahmz/cicd-pipeline" // Cambia si usas otro nombre de repo en DockerHub
+        DOCKER_IMAGE = "laurahmz/cicd-pipeline"
+        PORT = '3001'
     }
 
     stages {
@@ -15,45 +12,31 @@ pipeline {
                 checkout scm
             }
         }
-
         stage('Install & Build') {
             steps {
                 sh 'npm install'
-                // Descomenta si usas build scripts como React o Vue
-                // sh 'npm run build'
             }
         }
-
         stage('Tests') {
             steps {
                 sh 'npm test || echo "No tests found or tests failed"'
             }
         }
-
         stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build("${DOCKER_IMAGE}:${env.BRANCH_NAME}")
+                    docker.build("${DOCKER_IMAGE}:dev")
                 }
             }
         }
-
-        stage('Deploy') {
-            when {
-                branch 'main'
-            }
+        stage('Run Container') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )
-                ]) {
-                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                    sh "docker push ${DOCKER_IMAGE}:${env.BRANCH_NAME}"
+                script {
+                    sh "docker rm -f app-dev || true"
+                    sh "docker run -d -p ${PORT}:3000 --name app-dev ${DOCKER_IMAGE}:dev"
                 }
             }
         }
+        // En dev no hacemos push a DockerHub, pero puedes si necesitas QA
     }
 }
